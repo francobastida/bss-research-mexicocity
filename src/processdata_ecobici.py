@@ -8,6 +8,8 @@ Assumptions:
   gender, age, bike_id, start_station, start_date, start_time, end_station, end_date, end_time
 - Some years have names in Spanish and others in English as well as different spellings and symbols (e.g., 'Fecha Arribo' vs 'Fecha_Arribo').
 
+Use:
+python src/processdata_ecobici.py
 """
 
 from __future__ import annotations
@@ -25,7 +27,7 @@ import pandas as pd
 # 1) Configuration
 # =========================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__)) #current script
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW_FOLDER = os.path.join(BASE_DIR, "data", "raw") #where in directory
 OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs") #saved cleaned outputs
 YEARLY_OUTPUT_FOLDER = os.path.join(OUTPUT_FOLDER, "yearly")
@@ -135,35 +137,70 @@ def standardize_columns(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str], List
 
 def parse_datetime(date_series: pd.Series, time_series: pd.Series) -> pd.Series:
     """
-    Combine date and time into a single datetime column (based on dayfirst=True)
+    Combine date and time into a single datetime column.
+    This second iteration handles:
+    - day-first dates like 31/07/21
+    - mixed hour formatting like 0:03:31 vs 23:57:44
+    - extra spaces
+    - inconsistent elements and separators
     """
-    combined = (
-        date_series.astype("string").fillna("").str.strip() + " " +
-        time_series.astype("string").fillna("").str.strip()
-    ).str.strip()
 
-    return pd.to_datetime(combined, errors="coerce", dayfirst=True)
+    date_clean = (
+        date_series.astype("string")
+        .fillna("")
+        .str.strip()
+    )
+
+    time_clean = (
+        time_series.astype("string") #"0:03:31" -> "00:03:31"
+        .fillna("")
+        .str.strip()
+        .replace({"": pd.NA})
+    )
+
+    time_clean = time_clean.str.replace(
+        r"^(\d):(\d{2}):(\d{2})$", #H:MM:SS, pad with zero
+        r"0\1:\2:\3",
+        regex=True
+    )
+
+    combined = (date_clean.fillna("") + " " + time_clean.fillna("")).str.strip()
+
+    # Format with 2-digit year
+    dt = pd.to_datetime(
+        combined,
+        format="%d/%m/%y %H:%M:%S",
+        errors="coerce"
+    )
+
+    # Fallback for rows that could fail
+    mask = dt.isna() & combined.ne("")
+    if mask.any():
+        dt_fallback = pd.to_datetime(
+            combined[mask],
+            errors="coerce",
+            dayfirst=True
+        )
+        dt.loc[mask] = dt_fallback
+    return dt
 
 def clean_gender(series: pd.Series) -> pd.Series:
-    """
-    Standardize gender values to Male - M/ Female - F.
-    """
-    s = series.astype("string").str.strip().str.lower()
+        s = series.astype("string").str.strip().str.lower()
 
-    mapping = {
-        "m": "M",
-        "masculino": "M",
-        "male": "M",
-        "hombre": "M",
-        "f": "F",
-        "femenino": "F",
-        "female": "F",
-        "mujer": "F",
-    }
+        mapping = {
+            "m": "M",
+            "masculino": "M",
+            "male": "M",
+            "hombre": "M",
+            "f": "F",
+            "femenino": "F",
+            "female": "F",
+            "mujer": "F",
+        }
 
-    s = s.replace(mapping)
-    s = s.where(s.isin(["M", "F"]), pd.NA)
-    return s
+        s = s.replace(mapping)
+        s = s.where(s.isin(["M", "F"]), pd.NA)
+        return s
 
 def clean_age(series: pd.Series, min_age: int = 10, max_age: int = 100) -> pd.Series:
     """
@@ -174,7 +211,7 @@ def clean_age(series: pd.Series, min_age: int = 10, max_age: int = 100) -> pd.Se
 
 def clean_station_id(series: pd.Series) -> pd.Series:
     """
-    Convert station IDs to nullable integer.
+    Convert station IDs to null integer.
     """
     s = pd.to_numeric(series, errors="coerce")
     return s.astype("Int64")
@@ -222,17 +259,22 @@ def clean_one_file(filepath: str) -> Tuple[pd.DataFrame, Dict]:
         cleaned dataframe, metadata dictionary
     """
     meta = {
-        "file": filepath,
-        "rows_raw": 0,
-        "rows_cleaned": 0,
-        "missing_columns": "",
-        "n_start_dt_missing": 0,
-        "n_end_dt_missing": 0,
-        "n_negative_duration": 0,
-        "n_duration_gt_24h": 0,
-        "status": "ok",
-        "error": "",
-    }
+    "file": filepath,
+    "rows_raw": 0,
+    "rows_cleaned": 0,
+    "found_columns": "",
+    "missing_columns": "",
+    "n_start_dt_missing": 0,
+    "n_end_dt_missing": 0,
+    "n_negative_duration": 0,
+    "n_duration_gt_24h": 0,
+    "pct_start_dt_missing": 0.0,
+    "pct_end_dt_missing": 0.0,
+    "all_start_station_missing": False,
+    "all_end_station_missing": False,
+    "status": "ok",
+    "error": "",
+    }   
 
     try:
         try:
@@ -246,6 +288,16 @@ def clean_one_file(filepath: str) -> Tuple[pd.DataFrame, Dict]:
         meta["found_columns"] = ", ".join(found)
         meta["missing_columns"] = ", ".join(missing)
 
+        # Diagnose mapping failures in station columns
+        meta["all_start_station_missing"] = bool(df["start_station_id"].isna().all())
+        meta["all_end_station_missing"] = bool(df["end_station_id"].isna().all())
+
+        if meta["all_start_station_missing"]:
+            print(f"WARNING: all start_station_id values missing in {os.path.basename(filepath)}")
+
+        if meta["all_end_station_missing"]:
+            print(f"WARNING: all end_station_id values missing in {os.path.basename(filepath)}")
+        
         file_year, file_month = extract_file_period(filepath)
         df["file_year"] = file_year
         df["file_month"] = file_month
@@ -282,6 +334,22 @@ def clean_one_file(filepath: str) -> Tuple[pd.DataFrame, Dict]:
         meta["n_end_dt_missing"] = int(df["flag_missing_end_dt"].sum())
         meta["n_negative_duration"] = int(df["flag_negative_duration"].sum())
         meta["n_duration_gt_24h"] = int(df["flag_duration_gt_24h"].sum())
+
+        if len(df) > 0:
+            meta["pct_start_dt_missing"] = round(meta["n_start_dt_missing"] / len(df), 4)
+            meta["pct_end_dt_missing"] = round(meta["n_end_dt_missing"] / len(df), 4)
+
+        if meta["pct_start_dt_missing"] > 0.05:
+            print(
+                f"WARNING: {os.path.basename(filepath)} has high missing start_dt rate "
+                f"({meta['pct_start_dt_missing']:.1%})"
+            )
+
+        if meta["pct_end_dt_missing"] > 0.05:
+            print(
+                f"WARNING: {os.path.basename(filepath)} has high missing end_dt rate "
+                f"({meta['pct_end_dt_missing']:.1%})"
+            )
 
         df = df.loc[~df["start_dt"].isna()].copy()
 
