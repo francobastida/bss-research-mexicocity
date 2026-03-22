@@ -1,9 +1,13 @@
+# Mac
+.DS_Store
+
 # Ignore data files
 *.csv
 *.json
 *.tsv
 *.xlsx
 *.parquet
+
 
 # Ignore entire data & output folders
 data/
@@ -15,4 +19,6 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Conda env
-*.env.DS_Store
+*.env
+
+
