@@ -10,6 +10,8 @@ Assumptions:
 
 Use:
 python src/processdata_ecobici.py
+
+After different runs and iterations, duckDB would be more practical for the full year parquet.
 """
 
 from __future__ import annotations
@@ -312,6 +314,11 @@ def clean_one_file(filepath: str) -> Tuple[pd.DataFrame, Dict]:
         df["start_dt"] = parse_datetime(df["start_date"], df["start_time"])
         df["end_dt"] = parse_datetime(df["end_date"], df["end_time"])
 
+        # Enforce consistency between parsed start year and filename year
+        if pd.notna(file_year):
+            mismatch_mask = df["start_dt"].notna() & (df["start_dt"].dt.year != int(file_year))
+            df = df.loc[~mismatch_mask].copy()
+
         df["trip_duration_min"] = (df["end_dt"] - df["start_dt"]).dt.total_seconds() / 60
 
         df["trip_year"] = df["start_dt"].dt.year.astype("Int64")
@@ -459,3 +466,4 @@ if __name__ == "__main__":
     print(cleaning_log.head())
 
     save_log(cleaning_log)
+    #build_full_parquet_from_yearly() #kills the script due to use of memory
