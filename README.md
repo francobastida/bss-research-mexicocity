@@ -6,19 +6,17 @@
 
 This repository contains all code, processed data, and outputs associated with the thesis:
 
-**Where Bike Thou? A Machine Learning Approach to Demand Prediction and Bike-sharing Station Prioritization in Mexico City**
+> **Where Bike Thou? A Machine Learning Approach to Demand Prediction and Bike-sharing Station Prioritization in Mexico City**
 
-The project has been submitted as part of the requirements for the Master of Data Science for Public Policy degree at the Hertie School.
-
-The thesis asks whether historical bike-sharing flows can be used to **predict station-level demand** and **inform prioritization strategies for bike rebalancing** in a large-scale urban system.
+The project has been submitted as part of the requirements for the Master of Data Science for Public Policy degree at the Hertie School. The thesis asks whether historical bike-sharing flows can be used to **predict station-level demand** and **inform prioritization strategies for bike rebalancing** in a large-scale urban system.
 
 The modeling framework is structured around two main components:
 
 1. **Demand prediction models**  
-   Machine learning models (Linear, Poisson, Decision Tree, Random Forest, XGBoost) are used to forecast hourly station-level departures.
+> Machine learning models (Linear, Poisson, Decision Tree, Random Forest, XGBoost) are used to forecast hourly station-level departures.
 
 2. **Station prioritization framework**  
-   A prediction-informed prioritization algorithm ranks stations based on **expected demand pressure and imbalance**, identifying high-impact targets for rebalancing.
+> A prediction-informed prioritization algorithm ranks stations based on **expected demand pressure and imbalance**, identifying high-impact targets for rebalancing.
 
 The approach is evaluated using time-based splits and **out-of-sample data (2025)**, comparing prediction-informed prioritization against observed imbalance patterns.
 
@@ -31,8 +29,8 @@ Mexico City’s public bike-sharing system is **ECOBICI**
 
 Historical data is publicly available through:
 
-- ECOBICI Open Data Portal  
-  https://ecobici.cdmx.gob.mx/en/open-data/
+> ECOBICI Open Data Portal  
+> https://ecobici.cdmx.gob.mx/en/open-data/
 
 ---
 
@@ -47,11 +45,11 @@ Historical data is publicly available through:
   - cleaned and processed datasets (`.parquet`)
   - feature-engineered inputs and modeling datasets
 
-Note: Large datasets (e.g., yearly parquet files) are excluded due to GitHub size constraints.
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
+```text
 ECOBICI-2026/
 │
 ├── data/
@@ -87,7 +85,7 @@ ECOBICI-2026/
 ├── requirements.txt
 ├── README.md
 └── .gitignore
-
+```
 
 ---
 
@@ -105,12 +103,11 @@ The analysis follows a structured pipeline:
 
 3. **Feature Engineering (`notebooks/03–06`)**
    - Temporal features (hour, weekday, peak periods)
-   - Weather and holiday indicators 
-   - Multimodality proxy creation (distance to nearest metro)
+   - Weather, holiday and multimodality proxies (distance to nearest metro)
 
 4. **Demand Prediction (`notebooks/07`)**
    - Models evaluated: Linear, Poisson, Decision Tree, Random Forest, XGBoost
-   - Metrics: MAE and RMSE
+   - Error metrics: MAE and RMSE
    - Validation using 2025 data
 
 5. **Station Prioritization (`notebooks/08`)**
@@ -124,10 +121,7 @@ The analysis follows a structured pipeline:
 ## Disclaimer
 
 The preprocessing scripts are provided for **transparency**, but may not fully reproduce identical outputs without access to the original raw CSV files due to formatting inconsistencies across data sources.
-
-The repository focuses on:
-
-- **reproducibility of modeling and prioritization results**
+Large datasets (e.g., yearly parquet files) are excluded due to GitHub size constraints and for efficiency purposes.
 
 ---
 
