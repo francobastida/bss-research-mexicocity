@@ -89,7 +89,7 @@ ECOBICI-2026/
 
 ---
 
-## 🔁 Workflow Summary
+## Workflow Summary
 
 The analysis follows a structured pipeline:
 
@@ -113,7 +113,6 @@ The analysis follows a structured pipeline:
 5. **Station Prioritization (`notebooks/08`)**
    - Priority score algorithm based on predicted demand and imbalance
    - Identification of top 5% high-priority stations
-   - Capacity-constrained bike allocation estimates
    - Evaluation against observed imbalance in 2025
 
 ---
