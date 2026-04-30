@@ -1,0 +1,62 @@
+# ------------------------
+# System files
+# ------------------------
+.DS_Store
+
+# ------------------------
+# Python
+# ------------------------
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# ------------------------
+# environments
+# ------------------------
+.env
+.venv/
+env/
+venv/
+
+# ------------------------
+# raw data (never track)
+# ------------------------
+data/raw/
+
+# ------------------------
+# outputs (ignore everything by default)
+# ------------------------
+outputs/*
+!outputs/figures/
+!outputs/figures/*.pdf
+
+# ------------------------
+# Modeling datasets
+# ------------------------
+!outputs/ecobici_station_hour.parquet
+!outputs/ecobici_station_hour_features.parquet
+!outputs/opt_df.parquet
+
+# ------------------------
+# reference data
+# ------------------------
+data/reference/*
+!data/reference/stations_gbfs_current.parquet
+!data/reference/stations_gbfs_with_metro_distance.parquet
+!data/reference/weather_hourly_cdmx_2018_2025.parquet
+!data/reference/mx_holidays.parquet
+
+# ------------------------
+# no bulky raw data
+# ------------------------
+*.csv
+*.tsv
+*.xlsx
+*.json
+
+# ------------------------
+# archives / large files
+# ------------------------
+*.zip
+*.tar
+*.gz
